@@ -10,10 +10,25 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Models\" />
-    <Folder Include="Utils\" />
-    <Folder Include="ViewModels\Commands\" />
-    <Folder Include="Views\" />
+    <None Remove="Resources\Icons\close.png" />
+    <None Remove="Resources\Icons\new.png" />
+    <None Remove="Resources\Icons\open.png" />
+    <None Remove="Resources\Icons\save.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\Icons\close.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\Icons\new.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\Icons\open.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\Icons\save.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
   </ItemGroup>
 
 </Project>
