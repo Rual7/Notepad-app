@@ -92,17 +92,28 @@
                     </Style>
                 </Border.Style>
 
-                <TreeView ItemsSource="{Binding TreeItems}">
+                <TreeView x:Name="ProjectTreeView"
+          ItemsSource="{Binding TreeItems}"
+          PreviewMouseDoubleClick="ProjectTreeView_PreviewMouseDoubleClick">
+
+                    <TreeView.ItemContainerStyle>
+                        <Style TargetType="TreeViewItem">
+                            <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+                            <EventSetter Event="Expanded" Handler="TreeViewItem_Expanded" />
+                        </Style>
+                    </TreeView.ItemContainerStyle>
+
                     <TreeView.ItemTemplate>
                         <HierarchicalDataTemplate ItemsSource="{Binding Children}">
                             <TextBlock Text="{Binding Name}" />
                         </HierarchicalDataTemplate>
                     </TreeView.ItemTemplate>
+
                 </TreeView>
             </Border>
 
             <GridSplitter Grid.Column="1"
-                          Width="5"
+                          Width="3"
                           HorizontalAlignment="Stretch"
                           VerticalAlignment="Stretch"
                           Background="LightGray" />

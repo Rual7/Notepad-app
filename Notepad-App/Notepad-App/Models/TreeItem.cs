@@ -2,20 +2,47 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Text;
+using Notepad_App.ViewModels;
 
 namespace Notepad_App.Models;
 
-public class TreeItem
+public class TreeItem : BaseVM
 {
-    public string Name { get; set; } = string.Empty;
+    private string _name = string.Empty;
+    private string _fullPath = string.Empty;
+    private bool _isDirectory;
+    private bool _isExpanded;
+    private bool _isLoaded;
 
-    public string FullPath { get; set; } = string.Empty;
+    public string Name
+    {
+        get => _name;
+        set => SetField(ref _name, value);
+    }
 
-    public bool IsDirectory { get; set; }
+    public string FullPath
+    {
+        get => _fullPath;
+        set => SetField(ref _fullPath, value);
+    }
+
+    public bool IsDirectory
+    {
+        get => _isDirectory;
+        set => SetField(ref _isDirectory, value);
+    }
+
+    public bool IsExpanded
+    {
+        get => _isExpanded;
+        set => SetField(ref _isExpanded, value);
+    }
+
+    public bool IsLoaded
+    {
+        get => _isLoaded;
+        set => SetField(ref _isLoaded, value);
+    }
 
     public ObservableCollection<TreeItem> Children { get; set; } = new();
-
-    public bool IsExpanded { get; set; }
-
-    public bool IsLoaded { get; set; }
 }
