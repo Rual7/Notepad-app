@@ -11,6 +11,9 @@
 
   <ItemGroup>
     <None Remove="Resources\Icons\close.png" />
+    <None Remove="Resources\Icons\file.png" />
+    <None Remove="Resources\Icons\folder-open.png" />
+    <None Remove="Resources\Icons\folder.png" />
     <None Remove="Resources\Icons\new.png" />
     <None Remove="Resources\Icons\open.png" />
     <None Remove="Resources\Icons\save.png" />
@@ -20,10 +23,16 @@
     <Resource Include="Resources\Icons\close.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
-    <Resource Include="Resources\Icons\new.png">
+    <Resource Include="Resources\Icons\file.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
-    <Resource Include="Resources\Icons\open.png">
+    <Resource Include="Resources\Icons\folder-open.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\Icons\folder.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\Icons\new.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
     <Resource Include="Resources\Icons\save.png">

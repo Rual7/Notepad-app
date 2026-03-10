@@ -14,7 +14,7 @@ public class ConfigManager
     public ConfigManager()
     {
         string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        string folder = Path.Combine(appData, "NotepadPlusPlusClone");
+        string folder = Path.Combine(appData, "NotepadApp");
 
         if (!Directory.Exists(folder))
         {

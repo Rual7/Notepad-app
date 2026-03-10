@@ -27,6 +27,7 @@ public partial class MainWindow : Window
         InitializeComponent();
 
         DataContext = new MainVM();
+        ViewModel.ResetViewRequested += OnResetViewRequested;
 
         var config = _configManager.LoadConfig();
 
@@ -35,7 +36,17 @@ public partial class MainWindow : Window
 
         ViewModel.RestoreFromConfig(config);
     }
+    private void OnResetViewRequested()
+    {
+        if (WindowState == WindowState.Maximized)
+        {
+            WindowState = WindowState.Normal;
+        }
 
+        Width = MainVM.DefaultWindowWidth;
+        Height = MainVM.DefaultWindowHeight;
+        WindowStartupLocation = WindowStartupLocation.CenterScreen;
+    }
     private void TreeViewItem_Expanded(object sender, RoutedEventArgs e)
     {
         if (e.OriginalSource is TreeViewItem treeViewItem &&

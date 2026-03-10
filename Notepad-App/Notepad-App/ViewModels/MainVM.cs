@@ -16,7 +16,16 @@ namespace Notepad_App.ViewModels
         private readonly ConfigManager _configManager;
 
         private EditorTab? _selectedTab;
-        private bool _isTreeViewVisible = true;
+        private bool _isTreeViewVisible = false;
+        public GridLength TreeColumnWidth =>
+            IsTreeViewVisible ? new GridLength(250) : new GridLength(0);
+
+        public GridLength SplitterColumnWidth =>
+            IsTreeViewVisible ? new GridLength(3) : new GridLength(0);
+
+        public const double DefaultWindowWidth = 1100;
+        public const double DefaultWindowHeight = 700;
+
         private int _untitledCounter = 1;
 
         public ObservableCollection<EditorTab> Tabs { get; } = new();
@@ -37,7 +46,14 @@ namespace Notepad_App.ViewModels
         public bool IsTreeViewVisible
         {
             get => _isTreeViewVisible;
-            set => SetField(ref _isTreeViewVisible, value);
+            set
+            {
+                if (SetField(ref _isTreeViewVisible, value))
+                {
+                    OnPropertyChanged(nameof(TreeColumnWidth));
+                    OnPropertyChanged(nameof(SplitterColumnWidth));
+                }
+            }
         }
 
         public RelayCommand NewFileCommand { get; }
@@ -46,7 +62,7 @@ namespace Notepad_App.ViewModels
         public RelayCommand SaveFileAsCommand { get; }
         public RelayCommand CloseTabCommand { get; }
         public RelayCommand CloseAllTabsCommand { get; }
-        public RelayCommand ToggleTreeViewCommand { get; }
+        public RelayCommand ResetViewCommand { get; }
         public RelayCommand ShowAboutCommand { get; }
         public RelayCommand ExitCommand { get; }
 
@@ -64,7 +80,7 @@ namespace Notepad_App.ViewModels
                 parameter => CloseTab(parameter as EditorTab ?? SelectedTab),
                 _ => SelectedTab != null);
             CloseAllTabsCommand = new RelayCommand(_ => CloseAllTabs(), _ => Tabs.Any());
-            ToggleTreeViewCommand = new RelayCommand(_ => IsTreeViewVisible = !IsTreeViewVisible);
+            ResetViewCommand = new RelayCommand(_ => ResetView());
             ShowAboutCommand = new RelayCommand(_ => ShowAbout());
             ExitCommand = new RelayCommand(_ => Application.Current.Shutdown());
 
@@ -72,6 +88,13 @@ namespace Notepad_App.ViewModels
             CreateNewTab();
         }
 
+        public event Action? ResetViewRequested;
+
+        private void ResetView()
+        {
+            IsTreeViewVisible = false;
+            ResetViewRequested?.Invoke();
+        }
         public void LoadTreeRoots()
         {
             TreeItems.Clear();

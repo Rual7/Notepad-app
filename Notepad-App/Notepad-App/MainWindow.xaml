@@ -39,10 +39,11 @@
             </MenuItem>
 
             <MenuItem Header="_View">
+                <MenuItem Header="Reset View"
+                          Command="{Binding ResetViewCommand}" />
                 <MenuItem Header="Tree View"
                           IsCheckable="True"
-                          IsChecked="{Binding IsTreeViewVisible}"
-                          Command="{Binding ToggleTreeViewCommand}" />
+                          IsChecked="{Binding IsTreeViewVisible, Mode=TwoWay}" />
             </MenuItem>
 
             <MenuItem Header="_Help">
@@ -57,7 +58,7 @@
             </Button>
             
             <Button Command="{Binding OpenFileCommand}" ToolTip="Open">
-                <Image Source="Resources/Icons/open.png" Width="16" Height="16"/>
+                <Image Source="Resources/Icons/folder-open.png" Width="16" Height="16"/>
             </Button>
             
             <Button Command="{Binding SaveFileCommand}" ToolTip="Save">
@@ -73,8 +74,8 @@
 
         <Grid>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="250" />
-                <ColumnDefinition Width="5" />
+                <ColumnDefinition Width="{Binding TreeColumnWidth}" />
+                <ColumnDefinition Width="{Binding SplitterColumnWidth}" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
@@ -93,9 +94,8 @@
                 </Border.Style>
 
                 <TreeView x:Name="ProjectTreeView"
-          ItemsSource="{Binding TreeItems}"
-          PreviewMouseDoubleClick="ProjectTreeView_PreviewMouseDoubleClick">
-
+                          ItemsSource="{Binding TreeItems}"
+                          PreviewMouseDoubleClick="ProjectTreeView_PreviewMouseDoubleClick">
                     <TreeView.ItemContainerStyle>
                         <Style TargetType="TreeViewItem">
                             <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
@@ -103,12 +103,44 @@
                         </Style>
                     </TreeView.ItemContainerStyle>
 
+                    <TreeView.Resources>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="VerticalAlignment" Value="Center" />
+                        </Style>
+                    </TreeView.Resources>
+
                     <TreeView.ItemTemplate>
                         <HierarchicalDataTemplate ItemsSource="{Binding Children}">
-                            <TextBlock Text="{Binding Name}" />
+                            <StackPanel Orientation="Horizontal">
+
+                                <Image Width="16" Height="16" Margin="0,0,6,0">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Setter Property="Source" Value="/Resources/Icons/file.png" />
+                                            <Style.Triggers>
+
+                                                <DataTrigger Binding="{Binding IsDirectory}" Value="True">
+                                                    <Setter Property="Source" Value="/Resources/Icons/folder.png" />
+                                                </DataTrigger>
+
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding IsDirectory}" Value="True" />
+                                                        <Condition Binding="{Binding IsExpanded}" Value="True" />
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Source" Value="/Resources/Icons/folder-open.png" />
+                                                </MultiDataTrigger>
+
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+
+                                <TextBlock Text="{Binding Name}" />
+
+                            </StackPanel>
                         </HierarchicalDataTemplate>
                     </TreeView.ItemTemplate>
-
                 </TreeView>
             </Border>
 
@@ -127,13 +159,19 @@
                             <TextBlock Text="{Binding DisplayTitle}"
                                        VerticalAlignment="Center"
                                        Margin="0,0,8,0" />
-                            <Button Content="×"
-                                    Width="18"
+                            <Button Width="18"
                                     Height="18"
                                     Padding="0"
-                                    FontWeight="Bold"
+                                    Background="Transparent"
+                                    BorderThickness="0"
                                     Command="{Binding DataContext.CloseTabCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                                    CommandParameter="{Binding}" />
+                                    CommandParameter="{Binding}"
+                                    ToolTip="Close tab">
+
+                                <Image Source="/Resources/Icons/close.png"
+                                       Width="10"
+                                       Height="10"/>
+                            </Button>
                         </StackPanel>
                     </DataTemplate>
                 </TabControl.ItemTemplate>
