@@ -233,7 +233,7 @@ namespace Notepad_App.ViewModels
         {
             var newTab = new EditorTab
             {
-                Title = $"File {_untitledCounter++}",
+                Title = "New File",
                 Content = string.Empty,
                 FilePath = null,
                 IsModified = false,
@@ -423,7 +423,6 @@ namespace Notepad_App.ViewModels
                 SelectedTab = Tabs.FirstOrDefault();
             }
 
-            UpdateUntitledCounter();
             RefreshCommandStates();
         }
 
@@ -439,29 +438,5 @@ namespace Notepad_App.ViewModels
             };
         }
 
-        private void UpdateUntitledCounter()
-        {
-            int maxNumber = 0;
-
-            foreach (var tab in Tabs.Where(tab => tab.IsUntitled))
-            {
-                if (tab.Title.StartsWith("File "))
-                {
-                    string numberPart = tab.Title.Substring(5);
-
-                    if (int.TryParse(numberPart, out int number) && number > maxNumber)
-                    {
-                        maxNumber = number;
-                    }
-                }
-            }
-
-            _untitledCounter = maxNumber + 1;
-
-            if (_untitledCounter < 1)
-            {
-                _untitledCounter = 1;
-            }
-        }
     }
 }
