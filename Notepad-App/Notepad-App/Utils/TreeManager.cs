@@ -47,6 +47,7 @@ public class TreeManager
         try
         {
             var directories = Directory.GetDirectories(parent.FullPath).OrderBy(x => x);
+
             foreach (var dir in directories)
             {
                 var info = new DirectoryInfo(dir);
@@ -64,6 +65,7 @@ public class TreeManager
             }
 
             var files = Directory.GetFiles(parent.FullPath).OrderBy(x => x);
+
             foreach (var file in files)
             {
                 var info = new FileInfo(file);
@@ -86,6 +88,83 @@ public class TreeManager
         }
     }
 
+    public string CreateNewFile(string directoryPath)
+    {
+        string baseName = "NewFile";
+        string extension = ".txt";
+        string filePath = Path.Combine(directoryPath, $"{baseName}{extension}");
+
+        int counter = 1;
+
+        while (File.Exists(filePath))
+        {
+            filePath = Path.Combine(directoryPath, $"{baseName}{counter}{extension}");
+            counter++;
+        }
+
+        File.WriteAllText(filePath, string.Empty);
+        return filePath;
+    }
+
+    public async Task CopyFolderAsync(string sourceFolderPath, string destinationParentFolderPath)
+    {
+        await Task.Run(() =>
+        {
+            string source = Path.GetFullPath(sourceFolderPath);
+            string destinationParent = Path.GetFullPath(destinationParentFolderPath);
+
+            string sourceFolderName = Path.GetFileName(source.TrimEnd(Path.DirectorySeparatorChar));
+            string destinationFolder = Path.Combine(destinationParent, sourceFolderName);
+
+            if (Directory.Exists(destinationFolder))
+            {
+                destinationFolder = GetUniqueFolderPath(destinationParent, sourceFolderName);
+            }
+
+            var directories = Directory.GetDirectories(source, "*", SearchOption.AllDirectories);
+            var files = Directory.GetFiles(source, "*", SearchOption.AllDirectories);
+
+            Directory.CreateDirectory(destinationFolder);
+
+            foreach (var dir in directories)
+            {
+                string relativePath = Path.GetRelativePath(source, dir);
+                string newDir = Path.Combine(destinationFolder, relativePath);
+                Directory.CreateDirectory(newDir);
+            }
+
+            foreach (var file in files)
+            {
+                string relativePath = Path.GetRelativePath(source, file);
+                string newFile = Path.Combine(destinationFolder, relativePath);
+
+                string? parent = Path.GetDirectoryName(newFile);
+
+                if (!Directory.Exists(parent))
+                {
+                    Directory.CreateDirectory(parent);
+                }
+
+                File.Copy(file, newFile, true);
+            }
+        });
+    }
+
+    private string GetUniqueFolderPath(string parentFolder, string baseFolderName)
+    {
+        int counter = 1;
+        string newPath;
+
+        do
+        {
+            newPath = Path.Combine(parentFolder, $"{baseFolderName}_Copy{counter}");
+            counter++;
+        }
+        while (Directory.Exists(newPath));
+
+        return newPath;
+    }
+
     private void AddPlaceholder(TreeItem item)
     {
         try
@@ -105,4 +184,5 @@ public class TreeManager
         {
         }
     }
+
 }

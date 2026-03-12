@@ -2,6 +2,7 @@
 using Notepad_App.Models;
 using Notepad_App.Utils;
 using Notepad_App.ViewModels.Commands;
+using Notepad_App.Views;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -15,7 +16,9 @@ namespace Notepad_App.ViewModels
         private readonly TreeManager _treeManager;
         private readonly ConfigManager _configManager;
 
+
         private EditorTab? _selectedTab;
+
         private bool _isTreeViewVisible = false;
         public GridLength TreeColumnWidth =>
             IsTreeViewVisible ? new GridLength(250) : new GridLength(0);
@@ -26,11 +29,41 @@ namespace Notepad_App.ViewModels
         public const double DefaultWindowWidth = 1100;
         public const double DefaultWindowHeight = 700;
 
-        private int _untitledCounter = 1;
+        private string? _copiedFolderPath;
+        private bool _searchAllTabs;
+
+        public bool SearchAllTabs
+        {
+            get => _searchAllTabs;
+            set
+            {
+                if (SetField(ref _searchAllTabs, value))
+                {
+                    OnPropertyChanged(nameof(SearchSelectedTab));
+                }
+            }
+        }
+
+        public bool SearchSelectedTab
+        {
+            get => !SearchAllTabs;
+            set
+            {
+                if (value) // când bifezi Selected tab
+                {
+                    SearchAllTabs = false;
+                }
+                else // dacă îl debifezi explicit, activează All tabs
+                {
+                    SearchAllTabs = true;
+                }
+            }
+        }
 
         public ObservableCollection<EditorTab> Tabs { get; } = new();
         public ObservableCollection<TreeItem> TreeItems { get; } = new();
 
+        public event Action<int, int>? SelectTextRequested;
         public EditorTab? SelectedTab
         {
             get => _selectedTab;
@@ -66,8 +99,20 @@ namespace Notepad_App.ViewModels
         public RelayCommand ShowAboutCommand { get; }
         public RelayCommand ExitCommand { get; }
 
+        public bool HasCopiedFolder => !string.IsNullOrWhiteSpace(_copiedFolderPath);
+
+        public RelayCommand NewTreeFileCommand { get; }
+        public RelayCommand CopyPathCommand { get; }
+        public RelayCommand CopyFolderCommand { get; }
+        public RelayCommand PasteFolderCommand { get; }
+
+        public RelayCommand FindCommand { get; }
+        public RelayCommand ReplaceCommand { get; }
+        public RelayCommand ReplaceAllCommand { get; }
+
         public MainVM()
         {
+            SearchAllTabs = false;
             _fileManager = new FileManager();
             _treeManager = new TreeManager();
             _configManager = new ConfigManager();
@@ -83,6 +128,26 @@ namespace Notepad_App.ViewModels
             ResetViewCommand = new RelayCommand(_ => ResetView());
             ShowAboutCommand = new RelayCommand(_ => ShowAbout());
             ExitCommand = new RelayCommand(_ => Application.Current.Shutdown());
+
+            FindCommand = new RelayCommand(_ => FindText());
+            ReplaceCommand = new RelayCommand(_ => ReplaceText());
+            ReplaceAllCommand = new RelayCommand(_ => ReplaceAllText());
+
+            NewTreeFileCommand = new RelayCommand(
+                parameter => CreateNewFileInTree(parameter as TreeItem),
+                parameter => parameter is TreeItem item && item.IsDirectory);
+
+            CopyPathCommand = new RelayCommand(
+                parameter => CopyTreePath(parameter as TreeItem),
+                parameter => parameter is TreeItem item && item.IsDirectory);
+
+            CopyFolderCommand = new RelayCommand(
+                parameter => CopyTreeFolder(parameter as TreeItem),
+                parameter => parameter is TreeItem item && item.IsDirectory);
+
+            PasteFolderCommand = new RelayCommand(
+                parameter => PasteTreeFolder(parameter as TreeItem),
+                parameter => parameter is TreeItem item && item.IsDirectory && HasCopiedFolder);
 
             LoadTreeRoots();
             CreateNewTab();
@@ -461,5 +526,374 @@ namespace Notepad_App.ViewModels
             };
         }
 
+
+        public void CreateNewFileInTree(TreeItem? item)
+        {
+            if (item == null || !item.IsDirectory)
+            {
+                return;
+            }
+
+            try
+            {
+                string newFile = _treeManager.CreateNewFile(item.FullPath);
+
+                ReloadTreeItem(item);
+
+                OpenFileInTab(newFile);
+            }
+            catch
+            {
+                MessageBox.Show(
+                    "The file could not be created.",
+                    "New file",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+            }
+        }
+
+        public void CopyTreePath(TreeItem? item)
+        {
+            if (item == null || !item.IsDirectory)
+            {
+                return;
+            }
+
+            Clipboard.SetText(item.FullPath);
+        }
+
+        public void CopyTreeFolder(TreeItem? item)
+        {
+            if (item == null || !item.IsDirectory)
+            {
+                return;
+            }
+
+            _copiedFolderPath = item.FullPath;
+            PasteFolderCommand.RaiseCanExecuteChanged();
+        }
+
+        public async void PasteTreeFolder(TreeItem? item)
+        {
+            if (item == null || !item.IsDirectory || string.IsNullOrWhiteSpace(_copiedFolderPath))
+            {
+                return;
+            }
+
+            try
+            {
+                await _treeManager.CopyFolderAsync(_copiedFolderPath, item.FullPath);
+
+                ReloadTreeItem(item);
+            }
+            catch
+            {
+                MessageBox.Show(
+                    "The folder could not be pasted.",
+                    "Paste folder",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+            }
+        }
+
+        private void ReloadTreeItem(TreeItem item)
+        {
+            item.IsLoaded = false;
+            item.Children.Clear();
+            ExpandTreeItem(item);
+            item.IsExpanded = true;
+        }
+
+        private void FindText()
+        {
+            var dialog = new FindReplaceWindow(false)
+            {
+                Owner = Application.Current.MainWindow
+            };
+
+            if (dialog.ShowDialog() != true)
+            {
+                return;
+            }
+
+            string textToFind = dialog.FindText;
+
+            if (string.IsNullOrWhiteSpace(textToFind))
+            {
+                MessageBox.Show("Please enter text to find.");
+                return;
+            }
+
+            if (SearchAllTabs)
+            {
+                var results = Tabs
+                    .Select(tab => new
+                    {
+                        Tab = tab,
+                        Count = CountOccurrences(tab.Content, textToFind)
+                    })
+                    .Where(x => x.Count > 0)
+                    .ToList();
+
+                if (results.Count == 0)
+                {
+                    MessageBox.Show("Text not found in any open tab.");
+                    return;
+                }
+
+                SelectedTab = results.First().Tab;
+
+                string message = string.Join(
+                    "\n",
+                    results.Select(x => $"{x.Tab.Title}: {x.Count} occurrence(s)"));
+
+                MessageBox.Show(
+                    $"Found in {results.Count} tab(s):\n\n{message}",
+                    "Find",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            else
+            {
+                if (SelectedTab == null)
+                {
+                    return;
+                }
+
+                int index = FindFirstIndex(SelectedTab.Content, textToFind);
+
+                if (index >= 0)
+                {
+                    SelectTextRequested?.Invoke(index, textToFind.Length);
+                }
+                else
+                {
+                    MessageBox.Show(
+                        "Text not found in current tab.",
+                        "Find",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                }
+            }
+        }
+
+        private void ReplaceText()
+        {
+            var dialog = new FindReplaceWindow(true)
+            {
+                Owner = Application.Current.MainWindow
+            };
+
+            if (dialog.ShowDialog() != true)
+            {
+                return;
+            }
+
+            string find = dialog.FindText;
+            string replace = dialog.ReplaceText;
+
+            if (string.IsNullOrWhiteSpace(find))
+            {
+                MessageBox.Show("Please enter text to replace.");
+                return;
+            }
+
+            int count = 0;
+
+            if (SearchAllTabs)
+            {
+                foreach (var tab in Tabs)
+                {
+                    count += ReplaceFirstInTab(tab, find, replace);
+                }
+            }
+            else
+            {
+                if (SelectedTab == null)
+                {
+                    return;
+                }
+
+                count = ReplaceFirstInTab(SelectedTab, find, replace);
+            }
+
+            MessageBox.Show(
+                $"Replaced {count} occurrence(s).",
+                "Replace",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+        }
+
+        private void ReplaceAllText()
+        {
+            var dialog = new FindReplaceWindow(true)
+            {
+                Owner = Application.Current.MainWindow
+            };
+
+            if (dialog.ShowDialog() != true)
+            {
+                return;
+            }
+
+            string find = dialog.FindText;
+            string replace = dialog.ReplaceText;
+
+            if (string.IsNullOrWhiteSpace(find))
+            {
+                MessageBox.Show("Please enter text to replace.");
+                return;
+            }
+
+            if (SearchAllTabs)
+            {
+                var results = new List<string>();
+                int totalCount = 0;
+
+                foreach (var tab in Tabs)
+                {
+                    int count = CountOccurrences(tab.Content, find);
+
+                    if (count > 0)
+                    {
+                        tab.Content = tab.Content.Replace(find, replace);
+                        tab.IsModified = true;
+
+                        results.Add($"{tab.Title}: {count} replacement(s)");
+                        totalCount += count;
+                    }
+                }
+
+                if (results.Count == 0)
+                {
+                    MessageBox.Show("No occurrences found.");
+                    return;
+                }
+
+                string message = string.Join("\n", results);
+
+                MessageBox.Show(
+                    $"Total replacements: {totalCount}\n\n{message}",
+                    "Replace All",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            else
+            {
+                if (SelectedTab == null)
+                {
+                    return;
+                }
+
+                int count = CountOccurrences(SelectedTab.Content, find);
+
+                if (count == 0)
+                {
+                    MessageBox.Show("No occurrences found.");
+                    return;
+                }
+
+                SelectedTab.Content = SelectedTab.Content.Replace(find, replace);
+                SelectedTab.IsModified = true;
+
+                MessageBox.Show(
+                    $"{SelectedTab.Title}: {count} replacement(s)",
+                    "Replace All",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+        }
+
+        private int CountOccurrences(string source, string value)
+        {
+            if (string.IsNullOrEmpty(source) || string.IsNullOrEmpty(value))
+            {
+                return 0;
+            }
+
+            int count = 0;
+            int startIndex = 0;
+
+            while (true)
+            {
+                int index = source.IndexOf(value, startIndex);
+
+                if (index < 0)
+                {
+                    break;
+                }
+
+                count++;
+                startIndex = index + value.Length;
+            }
+
+            return count;
+        }
+
+        private int FindFirstIndex(string source, string value)
+        {
+            if (string.IsNullOrEmpty(source) || string.IsNullOrEmpty(value))
+            {
+                return -1;
+            }
+
+            return source.IndexOf(value);
+        }
+        private bool ContainsText(string source, string value)
+        {
+            if (string.IsNullOrEmpty(source) || string.IsNullOrEmpty(value))
+            {
+                return false;
+            }
+
+            return source.IndexOf(value, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private int ReplaceFirstInTab(EditorTab tab, string find, string replace)
+        {
+            int index = tab.Content.IndexOf(find, StringComparison.OrdinalIgnoreCase);
+
+            if (index < 0)
+            {
+                return 0;
+            }
+
+            tab.Content = tab.Content.Remove(index, find.Length).Insert(index, replace);
+            tab.IsModified = true;
+            return 1;
+        }
+
+        private int ReplaceAllInTab(EditorTab tab, string find, string replace)
+        {
+            if (string.IsNullOrEmpty(find))
+            {
+                return 0;
+            }
+
+            int count = 0;
+            int startIndex = 0;
+
+            while (true)
+            {
+                int index = tab.Content.IndexOf(find, startIndex, StringComparison.OrdinalIgnoreCase);
+
+                if (index < 0)
+                {
+                    break;
+                }
+
+                tab.Content = tab.Content.Remove(index, find.Length).Insert(index, replace);
+                startIndex = index + replace.Length;
+                count++;
+            }
+
+            if (count > 0)
+            {
+                tab.IsModified = true;
+            }
+
+            return count;
+        }
     }
+
 }

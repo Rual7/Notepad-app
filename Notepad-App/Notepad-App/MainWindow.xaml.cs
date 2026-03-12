@@ -28,6 +28,7 @@ public partial class MainWindow : Window
 
         DataContext = new MainVM();
         ViewModel.ResetViewRequested += OnResetViewRequested;
+        ViewModel.SelectTextRequested += OnSelectTextRequested;
 
         var config = _configManager.LoadConfig();
 
@@ -112,5 +113,55 @@ public partial class MainWindow : Window
         }
 
         return true;
+    }
+    private void OnSelectTextRequested(int startIndex, int length)
+    {
+        Dispatcher.InvokeAsync(() =>
+        {
+            if (EditorTabControl.SelectedItem == null)
+            {
+                return;
+            }
+
+            var contentPresenter = EditorTabControl.Template.FindName("PART_SelectedContentHost", EditorTabControl) as ContentPresenter;
+
+            if (contentPresenter == null)
+            {
+                return;
+            }
+
+            var textBox = EditorTabControl.ContentTemplate.FindName("EditorTextBox", contentPresenter) as TextBox;
+
+            if (textBox == null)
+            {
+                return;
+            }
+
+            textBox.Focus();
+            textBox.Select(startIndex, length);
+            textBox.CaretIndex = startIndex + length;
+            textBox.ScrollToLine(textBox.GetLineIndexFromCharacterIndex(startIndex));
+        }, System.Windows.Threading.DispatcherPriority.Background);
+    }
+    private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(parent, i);
+
+            if (child is T typedChild)
+            {
+                return typedChild;
+            }
+
+            T? descendant = FindVisualChild<T>(child);
+
+            if (descendant != null)
+            {
+                return descendant;
+            }
+        }
+
+        return null;
     }
 }

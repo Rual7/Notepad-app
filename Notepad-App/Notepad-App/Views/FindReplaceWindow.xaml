@@ -1,0 +1,23 @@
+﻿<Window x:Class="Notepad_App.Views.FindReplaceWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Find / Replace"
+        Height="180"
+        Width="300"
+        WindowStartupLocation="CenterOwner">
+
+    <StackPanel Margin="10">
+
+        <TextBlock Text="Find:"/>
+        <TextBox x:Name="FindBox"/>
+
+        <TextBlock x:Name="ReplaceLabel" Text="Replace:" Margin="0,10,0,0"/>
+        <TextBox x:Name="ReplaceBox"/>
+
+        <Button Content="OK"
+                Margin="0,10,0,0"
+                Width="80"
+                HorizontalAlignment="Right"
+                Click="Ok_Click"/>
+    </StackPanel>
+</Window>
