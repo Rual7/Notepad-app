@@ -1,16 +1,32 @@
-# WPF Notepad++-Style Text Editor
+# WPF NotepadApp Text Editor
 
-This is a Windows desktop application built in **C# with WPF**, similar to Notepad++. It allows you to create, open, edit, and save text files with multiple tabs.
+This project is a **Windows desktop text editor built with C# and WPF**, inspired by the functionality of Notepad++.
+The application supports **tab-based editing**, file management, and basic text search features.
 
 ## Features
 
-* Open a new blank tab or multiple tabs for text editing.
-* Open and save text files (`.txt`) and other file types.
-* Browse folders and files in a tree view.
-* Double-click a file in the tree to open it in a tab.
-* Right-click on folders to create new files, copy paths, copy folders, and paste folders.
-* Close individual tabs or all tabs with unsaved changes prompts.
-* Find, replace, and replace all text in the current tab or all tabs.
-* Menu bar with File, Search, View, and Help menus.
-* Toolbar with shortcuts for common actions.
-* About dialog with developer info and email link.
+* Create and edit text using **multiple tabs**
+* Open and save text files (`.txt`) and other file types
+* Navigate the local file system using a **TreeView**
+* Open files directly from the file explorer by **double-clicking**
+* Folder context menu with options to:
+
+  * create new files
+  * copy paths
+  * copy folders
+  * paste folders
+* Close individual tabs or all tabs with **unsaved changes confirmation**
+* **Find, Replace, and Replace All** within the current tab or across all tabs
+* **Menu bar** with File, Search, View, and Help options
+* **Toolbar shortcuts** for common actions
+* **About dialog** with developer information and contact email
+
+## Technologies
+
+* **C#**
+* **WPF (Windows Presentation Foundation)**
+* **.NET**
+
+## Purpose
+
+This project was created as a learning exercise to explore **desktop application development with WPF**, focusing on building a structured UI and implementing common features found in text editors.
