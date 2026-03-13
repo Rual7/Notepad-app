@@ -1,12 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
+﻿using System.IO;
 
 namespace Notepad_App.Utils;
 
 public class FileManager
 {
+    #region File Operations (READ/WRITE/EXISTS)
+
     public string ReadFile(string path)
     {
         return File.ReadAllText(path);
@@ -20,5 +19,7 @@ public class FileManager
     public bool FileExists(string path)
     {
         return File.Exists(path);
-    }   
+    }
+
+    #endregion
 }

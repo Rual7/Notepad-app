@@ -2,31 +2,34 @@
 using Notepad_App.Utils;
 using Notepad_App.ViewModels;
 using System.ComponentModel;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using System.Linq;
 
 namespace Notepad_App;
 
 public partial class MainWindow : Window
 {
+    #region Fields
+
     private readonly ConfigManager _configManager = new();
 
+    #endregion
+
+    #region Properties
+
     private MainVM ViewModel => (MainVM)DataContext;
+
+    #endregion
+
+    #region Constructor
 
     public MainWindow()
     {
         InitializeComponent();
 
         DataContext = new MainVM();
+
         ViewModel.ResetViewRequested += OnResetViewRequested;
         ViewModel.SelectTextRequested += OnSelectTextRequested;
 
@@ -37,6 +40,11 @@ public partial class MainWindow : Window
 
         ViewModel.RestoreFromConfig(config);
     }
+
+    #endregion
+
+    #region Window Layout Event Handlers
+
     private void OnResetViewRequested()
     {
         if (WindowState == WindowState.Maximized)
@@ -48,6 +56,11 @@ public partial class MainWindow : Window
         Height = MainVM.DefaultWindowHeight;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
     }
+
+    #endregion
+
+    #region TreeView Event Handlers
+
     private void TreeViewItem_Expanded(object sender, RoutedEventArgs e)
     {
         if (e.OriginalSource is TreeViewItem treeViewItem &&
@@ -56,7 +69,6 @@ public partial class MainWindow : Window
             ViewModel.ExpandTreeItem(item);
         }
     }
-
     private void ProjectTreeView_PreviewMouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
         if (ProjectTreeView.SelectedItem is TreeItem item)
@@ -64,6 +76,10 @@ public partial class MainWindow : Window
             ViewModel.OpenFileFromTree(item);
         }
     }
+
+    #endregion
+
+    #region Window Lifecycle
 
     protected override void OnClosing(CancelEventArgs e)
     {
@@ -78,6 +94,10 @@ public partial class MainWindow : Window
 
         base.OnClosing(e);
     }
+
+    #endregion
+
+    #region Exit Handling
 
     private bool TryCloseAllTabsBeforeExit()
     {
@@ -114,6 +134,11 @@ public partial class MainWindow : Window
 
         return true;
     }
+
+    #endregion
+
+    #region Search Highlight Handling
+
     private void OnSelectTextRequested(int startIndex, int length)
     {
         Dispatcher.InvokeAsync(() =>
@@ -123,14 +148,18 @@ public partial class MainWindow : Window
                 return;
             }
 
-            var contentPresenter = EditorTabControl.Template.FindName("PART_SelectedContentHost", EditorTabControl) as ContentPresenter;
+            var contentPresenter = EditorTabControl.Template.FindName(
+                "PART_SelectedContentHost",
+                EditorTabControl) as ContentPresenter;
 
             if (contentPresenter == null)
             {
                 return;
             }
 
-            var textBox = EditorTabControl.ContentTemplate.FindName("EditorTextBox", contentPresenter) as TextBox;
+            var textBox = EditorTabControl.ContentTemplate.FindName(
+                "EditorTextBox",
+                contentPresenter) as TextBox;
 
             if (textBox == null)
             {
@@ -143,25 +172,6 @@ public partial class MainWindow : Window
             textBox.ScrollToLine(textBox.GetLineIndexFromCharacterIndex(startIndex));
         }, System.Windows.Threading.DispatcherPriority.Background);
     }
-    private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
-    {
-        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
-        {
-            DependencyObject child = VisualTreeHelper.GetChild(parent, i);
 
-            if (child is T typedChild)
-            {
-                return typedChild;
-            }
-
-            T? descendant = FindVisualChild<T>(child);
-
-            if (descendant != null)
-            {
-                return descendant;
-            }
-        }
-
-        return null;
-    }
+    #endregion
 }

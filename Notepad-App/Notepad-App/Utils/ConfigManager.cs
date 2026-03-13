@@ -1,44 +1,56 @@
 ﻿using Notepad_App.Models;
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Text.Json;
 
 namespace Notepad_App.Utils;
 
 public class ConfigManager
 {
+    #region Fields
+
     private readonly string _configPath;
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        WriteIndented = true
+    };
+
+    #endregion
+
+    #region Constructor
 
     public ConfigManager()
     {
         string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        string folder = Path.Combine(appData, "NotepadApp");
+        string folderPath = Path.Combine(appData, "NotepadApp");
 
-        if (!Directory.Exists(folder))
+        if (!Directory.Exists(folderPath))
         {
-            Directory.CreateDirectory(folder);
+            Directory.CreateDirectory(folderPath);
         }
 
-        _configPath = Path.Combine(folder, "config.json");
+        _configPath = Path.Combine(folderPath, "config.json");
     }
+
+    #endregion
+
+    #region Save Configuration
 
     public void SaveConfig(AppConfig config)
     {
         try
         {
-            string json = JsonSerializer.Serialize(config, new JsonSerializerOptions
-            {
-                WriteIndented = true
-            });
-
+            string json = JsonSerializer.Serialize(config, _jsonOptions);
             File.WriteAllText(_configPath, json);
         }
         catch
         {
+            // Ignored intentionally
         }
     }
+
+    #endregion
+
+    #region Load Configuration
 
     public AppConfig LoadConfig()
     {
@@ -59,4 +71,6 @@ public class ConfigManager
             return new AppConfig();
         }
     }
+
+    #endregion
 }

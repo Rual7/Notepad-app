@@ -1,14 +1,13 @@
 ﻿using Notepad_App.Models;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Text;
 
 namespace Notepad_App.Utils;
 
 public class TreeManager
 {
+    #region Tree Loading
+
     public ObservableCollection<TreeItem> LoadRoots()
     {
         var items = new ObservableCollection<TreeItem>();
@@ -34,7 +33,6 @@ public class TreeManager
 
         return items;
     }
-
     public void LoadChildren(TreeItem parent)
     {
         if (parent == null || !parent.IsDirectory || parent.IsLoaded)
@@ -46,11 +44,11 @@ public class TreeManager
 
         try
         {
-            var directories = Directory.GetDirectories(parent.FullPath).OrderBy(x => x);
+            var directories = Directory.GetDirectories(parent.FullPath).OrderBy(path => path);
 
-            foreach (var dir in directories)
+            foreach (var directory in directories)
             {
-                var info = new DirectoryInfo(dir);
+                var info = new DirectoryInfo(directory);
 
                 var child = new TreeItem
                 {
@@ -64,7 +62,7 @@ public class TreeManager
                 parent.Children.Add(child);
             }
 
-            var files = Directory.GetFiles(parent.FullPath).OrderBy(x => x);
+            var files = Directory.GetFiles(parent.FullPath).OrderBy(path => path);
 
             foreach (var file in files)
             {
@@ -88,12 +86,16 @@ public class TreeManager
         }
     }
 
+    #endregion
+
+    #region File Creation
+
     public string CreateNewFile(string directoryPath)
     {
-        string baseName = "NewFile";
-        string extension = ".txt";
-        string filePath = Path.Combine(directoryPath, $"{baseName}{extension}");
+        const string baseName = "NewFile";
+        const string extension = ".txt";
 
+        string filePath = Path.Combine(directoryPath, $"{baseName}{extension}");
         int counter = 1;
 
         while (File.Exists(filePath))
@@ -105,6 +107,10 @@ public class TreeManager
         File.WriteAllText(filePath, string.Empty);
         return filePath;
     }
+
+    #endregion
+
+    #region Folder Copy
 
     public async Task CopyFolderAsync(string sourceFolderPath, string destinationParentFolderPath)
     {
@@ -121,34 +127,38 @@ public class TreeManager
                 destinationFolder = GetUniqueFolderPath(destinationParent, sourceFolderName);
             }
 
-            var directories = Directory.GetDirectories(source, "*", SearchOption.AllDirectories);
-            var files = Directory.GetFiles(source, "*", SearchOption.AllDirectories);
+            string[] directories = Directory.GetDirectories(source, "*", SearchOption.AllDirectories);
+            string[] files = Directory.GetFiles(source, "*", SearchOption.AllDirectories);
 
             Directory.CreateDirectory(destinationFolder);
 
-            foreach (var dir in directories)
+            foreach (var directory in directories)
             {
-                string relativePath = Path.GetRelativePath(source, dir);
-                string newDir = Path.Combine(destinationFolder, relativePath);
-                Directory.CreateDirectory(newDir);
+                string relativePath = Path.GetRelativePath(source, directory);
+                string newDirectory = Path.Combine(destinationFolder, relativePath);
+
+                Directory.CreateDirectory(newDirectory);
             }
 
             foreach (var file in files)
             {
                 string relativePath = Path.GetRelativePath(source, file);
                 string newFile = Path.Combine(destinationFolder, relativePath);
+                string? parentDirectory = Path.GetDirectoryName(newFile);
 
-                string? parent = Path.GetDirectoryName(newFile);
-
-                if (!Directory.Exists(parent))
+                if (!Directory.Exists(parentDirectory))
                 {
-                    Directory.CreateDirectory(parent);
+                    Directory.CreateDirectory(parentDirectory!);
                 }
 
                 File.Copy(file, newFile, true);
             }
         });
     }
+
+    #endregion
+
+    #region Helper Methods
 
     private string GetUniqueFolderPath(string parentFolder, string baseFolderName)
     {
@@ -164,7 +174,6 @@ public class TreeManager
 
         return newPath;
     }
-
     private void AddPlaceholder(TreeItem item)
     {
         try
@@ -182,7 +191,9 @@ public class TreeManager
         }
         catch
         {
+            // Ignored intentionally
         }
     }
 
+    #endregion
 }

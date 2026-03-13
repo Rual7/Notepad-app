@@ -1,22 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
+﻿using System.Windows;
 
 namespace Notepad_App.Views;
 
-
 public partial class FindReplaceWindow : Window
 {
+    #region Properties
+
     public string FindText => FindBox.Text;
     public string ReplaceText => ReplaceBox.Text;
+
+    #endregion
+
+    #region Constructor
 
     public FindReplaceWindow(bool showReplace)
     {
@@ -29,8 +24,14 @@ public partial class FindReplaceWindow : Window
         }
     }
 
+    #endregion
+
+    #region Event Handlers
+
     private void Ok_Click(object sender, RoutedEventArgs e)
     {
         DialogResult = true;
     }
+
+    #endregion
 }

@@ -8,7 +8,7 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <DockPanel>
-
+        
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
                 <MenuItem Header="New file"
@@ -32,21 +32,18 @@
 
             <MenuItem Header="_Search">
                 <MenuItem Header="Find..."
-          Command="{Binding FindCommand}" />
-
+                          Command="{Binding FindCommand}" />
                 <MenuItem Header="Replace..."
-          Command="{Binding ReplaceCommand}" />
-
+                          Command="{Binding ReplaceCommand}" />
                 <MenuItem Header="Replace All..."
-          Command="{Binding ReplaceAllCommand}" />
+                          Command="{Binding ReplaceAllCommand}" />
                 <Separator />
                 <MenuItem Header="Selected tab"
-          IsCheckable="True"
-          IsChecked="{Binding SearchSelectedTab, Mode=TwoWay}" />
-
+                          IsCheckable="True"
+                          IsChecked="{Binding SearchSelectedTab, Mode=TwoWay}" />
                 <MenuItem Header="All tabs"
-          IsCheckable="True"
-          IsChecked="{Binding SearchAllTabs, Mode=TwoWay}" />
+                          IsCheckable="True"
+                          IsChecked="{Binding SearchAllTabs, Mode=TwoWay}" />
             </MenuItem>
 
             <MenuItem Header="_View">
@@ -64,6 +61,7 @@
         </Menu>
 
         <ToolBar DockPanel.Dock="Top"  Background="White" >
+            
             <Button Command="{Binding NewFileCommand}" ToolTip="New">
                 <Image Source="Resources/Icons/new-file.png" Width="16" Height="16"/>
             </Button>
@@ -77,6 +75,7 @@
             </Button>
            
             <Separator/>
+            
             <Button Command="{Binding FindCommand}" ToolTip="Find">
                 <Image Source="Resources/Icons/find.png" Width="16" Height="16"/>
 
@@ -86,9 +85,11 @@
                 <Image Source="Resources/Icons/replace.png" Width="16" Height="16"/>
 
             </Button>
+            
             <Button Command="{Binding CloseTabCommand}" ToolTip="Close">
                 <Image Source="Resources/Icons/close.png" Width="16" Height="16"/>
             </Button>
+            
         </ToolBar>
 
         <Grid>
@@ -128,8 +129,8 @@
                                         <Setter.Value>
                                             <ContextMenu>
                                                 <MenuItem Header="New file"
-                                                      Command="{Binding PlacementTarget.Tag.NewTreeFileCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                          Command="{Binding PlacementTarget.Tag.NewTreeFileCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
 
                                                 <MenuItem Header="Copy path"
                                                           Command="{Binding PlacementTarget.Tag.CopyPathCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
@@ -198,9 +199,9 @@
                           Background="LightGray" />
 
             <TabControl x:Name="EditorTabControl"
-            Grid.Column="2"
-            ItemsSource="{Binding Tabs}"
-            SelectedItem="{Binding SelectedTab}">
+                        Grid.Column="2"
+                        ItemsSource="{Binding Tabs}"
+                        SelectedItem="{Binding SelectedTab}">
                 <TabControl.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal">
@@ -227,14 +228,14 @@
                 <TabControl.ContentTemplate>
                     <DataTemplate>
                         <TextBox x:Name="EditorTextBox"
-                 Text="{Binding Content, UpdateSourceTrigger=PropertyChanged}"
-                 AcceptsReturn="True"
-                 AcceptsTab="True"
-                 VerticalScrollBarVisibility="Auto"
-                 HorizontalScrollBarVisibility="Auto"
-                 TextWrapping="NoWrap"
-                 FontFamily="Consolas"
-                 FontSize="14" />
+                                 Text="{Binding Content, UpdateSourceTrigger=PropertyChanged}"
+                                 AcceptsReturn="True"
+                                 AcceptsTab="True"
+                                 VerticalScrollBarVisibility="Auto"
+                                 HorizontalScrollBarVisibility="Auto"
+                                 TextWrapping="NoWrap"
+                                 FontFamily="Consolas"
+                                 FontSize="14" />
                     </DataTemplate>
                 </TabControl.ContentTemplate>
             </TabControl>

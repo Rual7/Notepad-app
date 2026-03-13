@@ -1,18 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-using Notepad_App.ViewModels;
+﻿using Notepad_App.ViewModels;
 
 namespace Notepad_App.Models;
 
 public class EditorTab : BaseVM
 {
+    #region Fields
+
     private string _title = string.Empty;
     private string _content = string.Empty;
     private string? _filePath;
     private bool _isModified;
     private bool _isUntitled;
+
+    #endregion
+
+    #region Properties
 
     public string Title
     {
@@ -25,7 +27,6 @@ public class EditorTab : BaseVM
             }
         }
     }
-
     public string Content
     {
         get => _content;
@@ -37,13 +38,11 @@ public class EditorTab : BaseVM
             }
         }
     }
-
     public string? FilePath
     {
         get => _filePath;
         set => SetField(ref _filePath, value);
     }
-
     public bool IsModified
     {
         get => _isModified;
@@ -55,12 +54,12 @@ public class EditorTab : BaseVM
             }
         }
     }
-
     public bool IsUntitled
     {
         get => _isUntitled;
         set => SetField(ref _isUntitled, value);
     }
-
     public string DisplayTitle => IsModified ? $"*{Title}" : Title;
+
+    #endregion
 }

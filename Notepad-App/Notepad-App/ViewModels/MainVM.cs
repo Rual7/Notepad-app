@@ -5,32 +5,62 @@ using Notepad_App.ViewModels.Commands;
 using Notepad_App.Views;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Linq;
 using System.Windows;
 
 namespace Notepad_App.ViewModels
 {
     public class MainVM : BaseVM
     {
+        #region Constants
+
+        public const double DefaultWindowWidth = 1100;
+        public const double DefaultWindowHeight = 700;
+
+        #endregion
+
+        #region Fields
+
         private readonly FileManager _fileManager;
         private readonly TreeManager _treeManager;
-        private readonly ConfigManager _configManager;
-
 
         private EditorTab? _selectedTab;
-
         private bool _isTreeViewVisible = false;
+        private bool _searchAllTabs;
+        private string? _copiedFolderPath;
+
+        #endregion
+
+        #region Events
+
+        public event Action<int, int>? SelectTextRequested;
+        public event Action? ResetViewRequested;
+
+        #endregion
+
+        #region Layout Properties
+
+        public bool IsTreeViewVisible
+        {
+            get => _isTreeViewVisible;
+            set
+            {
+                if (SetField(ref _isTreeViewVisible, value))
+                {
+                    OnPropertyChanged(nameof(TreeColumnWidth));
+                    OnPropertyChanged(nameof(SplitterColumnWidth));
+                }
+            }
+        }
+
         public GridLength TreeColumnWidth =>
             IsTreeViewVisible ? new GridLength(250) : new GridLength(0);
 
         public GridLength SplitterColumnWidth =>
             IsTreeViewVisible ? new GridLength(3) : new GridLength(0);
 
-        public const double DefaultWindowWidth = 1100;
-        public const double DefaultWindowHeight = 700;
+        #endregion
 
-        private string? _copiedFolderPath;
-        private bool _searchAllTabs;
+        #region Search Scope Properties
 
         public bool SearchAllTabs
         {
@@ -47,23 +77,16 @@ namespace Notepad_App.ViewModels
         public bool SearchSelectedTab
         {
             get => !SearchAllTabs;
-            set
-            {
-                if (value) // când bifezi Selected tab
-                {
-                    SearchAllTabs = false;
-                }
-                else // dacă îl debifezi explicit, activează All tabs
-                {
-                    SearchAllTabs = true;
-                }
-            }
+            set => SearchAllTabs = !value;
         }
+
+        #endregion
+
+        #region Collections and Selection
 
         public ObservableCollection<EditorTab> Tabs { get; } = new();
         public ObservableCollection<TreeItem> TreeItems { get; } = new();
 
-        public event Action<int, int>? SelectTextRequested;
         public EditorTab? SelectedTab
         {
             get => _selectedTab;
@@ -76,18 +99,11 @@ namespace Notepad_App.ViewModels
             }
         }
 
-        public bool IsTreeViewVisible
-        {
-            get => _isTreeViewVisible;
-            set
-            {
-                if (SetField(ref _isTreeViewVisible, value))
-                {
-                    OnPropertyChanged(nameof(TreeColumnWidth));
-                    OnPropertyChanged(nameof(SplitterColumnWidth));
-                }
-            }
-        }
+        public bool HasCopiedFolder => !string.IsNullOrWhiteSpace(_copiedFolderPath);
+
+        #endregion
+
+        #region Commands
 
         public RelayCommand NewFileCommand { get; }
         public RelayCommand OpenFileCommand { get; }
@@ -99,8 +115,6 @@ namespace Notepad_App.ViewModels
         public RelayCommand ShowAboutCommand { get; }
         public RelayCommand ExitCommand { get; }
 
-        public bool HasCopiedFolder => !string.IsNullOrWhiteSpace(_copiedFolderPath);
-
         public RelayCommand NewTreeFileCommand { get; }
         public RelayCommand CopyPathCommand { get; }
         public RelayCommand CopyFolderCommand { get; }
@@ -110,12 +124,16 @@ namespace Notepad_App.ViewModels
         public RelayCommand ReplaceCommand { get; }
         public RelayCommand ReplaceAllCommand { get; }
 
+        #endregion
+
+        #region Constructor
+
         public MainVM()
         {
-            SearchAllTabs = false;
             _fileManager = new FileManager();
             _treeManager = new TreeManager();
-            _configManager = new ConfigManager();
+
+            SearchAllTabs = false;
 
             NewFileCommand = new RelayCommand(_ => CreateNewTab());
             OpenFileCommand = new RelayCommand(_ => OpenFile());
@@ -153,34 +171,19 @@ namespace Notepad_App.ViewModels
             CreateNewTab();
         }
 
-        public event Action? ResetViewRequested;
+        #endregion
+
+        #region Reset View
 
         private void ResetView()
         {
-            IsTreeViewVisible = false;
+            IsTreeViewVisible = true;
             ResetViewRequested?.Invoke();
         }
-        public void LoadTreeRoots()
-        {
-            TreeItems.Clear();
 
-            var roots = _treeManager.LoadRoots();
+        #endregion
 
-            foreach (var item in roots)
-            {
-                TreeItems.Add(item);
-            }
-        }
-
-        public void ExpandTreeItem(TreeItem? item)
-        {
-            if (item == null || !item.IsDirectory)
-            {
-                return;
-            }
-
-            _treeManager.LoadChildren(item);
-        }
+        #region Open File
 
         public void OpenFile()
         {
@@ -194,7 +197,6 @@ namespace Notepad_App.ViewModels
                 OpenFileInTab(dialog.FileName);
             }
         }
-
         public void OpenFileFromTree(TreeItem? item)
         {
             if (item == null || item.IsDirectory || string.IsNullOrWhiteSpace(item.FullPath))
@@ -204,12 +206,11 @@ namespace Notepad_App.ViewModels
 
             OpenFileInTab(item.FullPath);
         }
-
         public void OpenFileInTab(string filePath)
         {
             var existingTab = Tabs.FirstOrDefault(tab =>
                 !string.IsNullOrWhiteSpace(tab.FilePath) &&
-                string.Equals(tab.FilePath, filePath, System.StringComparison.OrdinalIgnoreCase));
+                string.Equals(tab.FilePath, filePath, StringComparison.OrdinalIgnoreCase));
 
             if (existingTab != null)
             {
@@ -249,6 +250,10 @@ namespace Notepad_App.ViewModels
             }
         }
 
+        #endregion
+
+        #region Save File
+
         public void SaveFile()
         {
             if (SelectedTab == null)
@@ -277,6 +282,10 @@ namespace Notepad_App.ViewModels
                     MessageBoxImage.Warning);
             }
         }
+
+        #endregion
+
+        #region Save File As
 
         public void SaveFileAs()
         {
@@ -317,6 +326,10 @@ namespace Notepad_App.ViewModels
             }
         }
 
+        #endregion
+
+        #region Create Tab
+
         public void CreateNewTab()
         {
             var newTab = new EditorTab
@@ -333,6 +346,10 @@ namespace Notepad_App.ViewModels
 
             RefreshCommandStates();
         }
+
+        #endregion
+
+        #region Close Tab
 
         public void CloseTab(EditorTab? tab)
         {
@@ -360,6 +377,10 @@ namespace Notepad_App.ViewModels
             RefreshCommandStates();
         }
 
+        #endregion
+
+        #region Close All Tabs
+
         public void CloseAllTabs()
         {
             var tabsToClose = Tabs.ToList();
@@ -381,6 +402,10 @@ namespace Notepad_App.ViewModels
 
             RefreshCommandStates();
         }
+
+        #endregion
+
+        #region Unsaved Changes Handling
 
         private bool ConfirmCloseTab(EditorTab tab)
         {
@@ -414,39 +439,9 @@ namespace Notepad_App.ViewModels
             return true;
         }
 
-        private void RemoveSingleEmptyUntitledTabIfNeeded()
-        {
-            if (Tabs.Count != 1)
-            {
-                return;
-            }
+        #endregion
 
-            var firstTab = Tabs[0];
-
-            if (firstTab.IsUntitled &&
-                string.IsNullOrEmpty(firstTab.Content) &&
-                !firstTab.IsModified)
-            {
-                Tabs.Clear();
-            }
-        }
-
-        private void ShowAbout()
-        {
-            MessageBox.Show(
-                "WPF NotepadApp\n\nStudent: Oncioiu Ionut-Raul\nGroup: 10LF243\nEmail: ionut.oncioiu@student.unitbv.ro",
-                "About",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
-        }
-
-        private void RefreshCommandStates()
-        {
-            SaveFileCommand.RaiseCanExecuteChanged();
-            SaveFileAsCommand.RaiseCanExecuteChanged();
-            CloseTabCommand.RaiseCanExecuteChanged();
-            CloseAllTabsCommand.RaiseCanExecuteChanged();
-        }
+        #region Save Configuration
 
         public AppConfig BuildAppConfig(double windowWidth, double windowHeight)
         {
@@ -459,6 +454,22 @@ namespace Notepad_App.ViewModels
                 OpenTabs = Tabs.Select(CloneTabForConfig).ToList()
             };
         }
+
+        private EditorTab CloneTabForConfig(EditorTab source)
+        {
+            return new EditorTab
+            {
+                Title = source.Title,
+                Content = source.Content,
+                FilePath = source.FilePath,
+                IsModified = source.IsModified,
+                IsUntitled = source.IsUntitled
+            };
+        }
+
+        #endregion
+
+        #region Restore Configuration
 
         public void RestoreFromConfig(AppConfig config)
         {
@@ -514,18 +525,39 @@ namespace Notepad_App.ViewModels
             RefreshCommandStates();
         }
 
-        private EditorTab CloneTabForConfig(EditorTab source)
+        #endregion
+
+        #region Load Tree Roots
+
+        public void LoadTreeRoots()
         {
-            return new EditorTab
+            TreeItems.Clear();
+
+            var roots = _treeManager.LoadRoots();
+
+            foreach (var item in roots)
             {
-                Title = source.Title,
-                Content = source.Content,
-                FilePath = source.FilePath,
-                IsModified = source.IsModified,
-                IsUntitled = source.IsUntitled
-            };
+                TreeItems.Add(item);
+            }
         }
 
+        #endregion
+
+        #region Expand Tree Item
+
+        public void ExpandTreeItem(TreeItem? item)
+        {
+            if (item == null || !item.IsDirectory)
+            {
+                return;
+            }
+
+            _treeManager.LoadChildren(item);
+        }
+
+        #endregion
+
+        #region TreeView New File
 
         public void CreateNewFileInTree(TreeItem? item)
         {
@@ -539,7 +571,6 @@ namespace Notepad_App.ViewModels
                 string newFile = _treeManager.CreateNewFile(item.FullPath);
 
                 ReloadTreeItem(item);
-
                 OpenFileInTab(newFile);
             }
             catch
@@ -552,6 +583,10 @@ namespace Notepad_App.ViewModels
             }
         }
 
+        #endregion
+
+        #region TreeView Copy Path
+
         public void CopyTreePath(TreeItem? item)
         {
             if (item == null || !item.IsDirectory)
@@ -561,6 +596,10 @@ namespace Notepad_App.ViewModels
 
             Clipboard.SetText(item.FullPath);
         }
+
+        #endregion
+
+        #region TreeView Copy Folder
 
         public void CopyTreeFolder(TreeItem? item)
         {
@@ -573,6 +612,10 @@ namespace Notepad_App.ViewModels
             PasteFolderCommand.RaiseCanExecuteChanged();
         }
 
+        #endregion
+
+        #region TreeView Paste Folder
+
         public async void PasteTreeFolder(TreeItem? item)
         {
             if (item == null || !item.IsDirectory || string.IsNullOrWhiteSpace(_copiedFolderPath))
@@ -583,7 +626,6 @@ namespace Notepad_App.ViewModels
             try
             {
                 await _treeManager.CopyFolderAsync(_copiedFolderPath, item.FullPath);
-
                 ReloadTreeItem(item);
             }
             catch
@@ -596,6 +638,10 @@ namespace Notepad_App.ViewModels
             }
         }
 
+        #endregion
+
+        #region TreeView Refresh
+
         private void ReloadTreeItem(TreeItem item)
         {
             item.IsLoaded = false;
@@ -603,6 +649,10 @@ namespace Notepad_App.ViewModels
             ExpandTreeItem(item);
             item.IsExpanded = true;
         }
+
+        #endregion
+
+        #region Find
 
         private void FindText()
         {
@@ -677,6 +727,10 @@ namespace Notepad_App.ViewModels
             }
         }
 
+        #endregion
+
+        #region Replace
+
         private void ReplaceText()
         {
             var dialog = new FindReplaceWindow(true)
@@ -723,6 +777,10 @@ namespace Notepad_App.ViewModels
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
         }
+
+        #endregion
+
+        #region Replace All
 
         private void ReplaceAllText()
         {
@@ -804,6 +862,10 @@ namespace Notepad_App.ViewModels
             }
         }
 
+        #endregion
+
+        #region Search Helpers
+
         private int CountOccurrences(string source, string value)
         {
             if (string.IsNullOrEmpty(source) || string.IsNullOrEmpty(value))
@@ -829,7 +891,6 @@ namespace Notepad_App.ViewModels
 
             return count;
         }
-
         private int FindFirstIndex(string source, string value)
         {
             if (string.IsNullOrEmpty(source) || string.IsNullOrEmpty(value))
@@ -839,19 +900,9 @@ namespace Notepad_App.ViewModels
 
             return source.IndexOf(value);
         }
-        private bool ContainsText(string source, string value)
-        {
-            if (string.IsNullOrEmpty(source) || string.IsNullOrEmpty(value))
-            {
-                return false;
-            }
-
-            return source.IndexOf(value, StringComparison.OrdinalIgnoreCase) >= 0;
-        }
-
         private int ReplaceFirstInTab(EditorTab tab, string find, string replace)
         {
-            int index = tab.Content.IndexOf(find, StringComparison.OrdinalIgnoreCase);
+            int index = tab.Content.IndexOf(find);
 
             if (index < 0)
             {
@@ -860,40 +911,56 @@ namespace Notepad_App.ViewModels
 
             tab.Content = tab.Content.Remove(index, find.Length).Insert(index, replace);
             tab.IsModified = true;
+
             return 1;
         }
 
-        private int ReplaceAllInTab(EditorTab tab, string find, string replace)
+        #endregion
+
+        #region About
+
+        private void ShowAbout()
         {
-            if (string.IsNullOrEmpty(find))
-            {
-                return 0;
-            }
-
-            int count = 0;
-            int startIndex = 0;
-
-            while (true)
-            {
-                int index = tab.Content.IndexOf(find, startIndex, StringComparison.OrdinalIgnoreCase);
-
-                if (index < 0)
-                {
-                    break;
-                }
-
-                tab.Content = tab.Content.Remove(index, find.Length).Insert(index, replace);
-                startIndex = index + replace.Length;
-                count++;
-            }
-
-            if (count > 0)
-            {
-                tab.IsModified = true;
-            }
-
-            return count;
+            MessageBox.Show(
+                "WPF NotepadApp\n\nStudent: Oncioiu Ionut-Raul\nGroup: 10LF243\nEmail: ionut.oncioiu@student.unitbv.ro",
+                "About",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
         }
-    }
 
+        #endregion
+
+        #region Command State Refresh
+
+        private void RefreshCommandStates()
+        {
+            SaveFileCommand.RaiseCanExecuteChanged();
+            SaveFileAsCommand.RaiseCanExecuteChanged();
+            CloseTabCommand.RaiseCanExecuteChanged();
+            CloseAllTabsCommand.RaiseCanExecuteChanged();
+        }
+
+        #endregion
+
+        #region Untitled Tab Cleanup
+
+        private void RemoveSingleEmptyUntitledTabIfNeeded()
+        {
+            if (Tabs.Count != 1)
+            {
+                return;
+            }
+
+            var firstTab = Tabs[0];
+
+            if (firstTab.IsUntitled &&
+                string.IsNullOrEmpty(firstTab.Content) &&
+                !firstTab.IsModified)
+            {
+                Tabs.Clear();
+            }
+        }
+
+        #endregion
+    }
 }
