@@ -334,7 +334,7 @@ namespace Notepad_App.ViewModels
         {
             var newTab = new EditorTab
             {
-                Title = "New File",
+                Title = "Untitled",
                 Content = string.Empty,
                 FilePath = null,
                 IsModified = false,

@@ -11,7 +11,7 @@ public class BaseVM : INotifyPropertyChanged
 
     #endregion
 
-    #region Protected Methods
+    #region Helper Methods
 
     protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
